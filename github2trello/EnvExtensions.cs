@@ -1,6 +1,6 @@
 ﻿namespace github2trello;
 
-public static class EnvironmentExtensions
+public static class EnvExtensions
 {
     public static string GetOrThrow(string id)
     {

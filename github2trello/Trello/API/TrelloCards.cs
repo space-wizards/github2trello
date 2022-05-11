@@ -1,17 +1,23 @@
-﻿using static github2trello.Trello.API.TrelloApi;
+﻿using System.Text;
+using System.Web;
+using static github2trello.Trello.API.TrelloApi;
 
 namespace github2trello.Trello.API;
 
-public class TrelloCards
+public static class TrelloCards
 {
-    public const string ApiUrl = $"{TrelloApi.ApiUrl}cards";
+    private const string ApiUrl = $"{TrelloApi.ApiUrl}cards";
     
-    public async Task Create(string idList, string name, string desc)
+    public static async Task Create(string idList, string name, string desc)
     {
+        idList = HttpUtility.UrlEncode(idList);
+        name = HttpUtility.UrlEncode(name);
+        desc = HttpUtility.UrlEncode(desc);
+
         var res = await Client.PostAsync($"{ApiUrl}?idList={idList}&name={name}&desc={desc}&key={Key}&token={Token}", null);
         if (!res.IsSuccessStatusCode)
         {
-            await Console.Error.WriteLineAsync($"Error creating card with name {name} and description {desc}:" +
+            await Console.Error.WriteLineAsync($"Error creating card with name {HttpUtility.UrlDecode(name)} and description {HttpUtility.UrlDecode(desc)}:" +
                                                $"{res.StatusCode} {res.ReasonPhrase}");
         }
     }

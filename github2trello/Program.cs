@@ -24,7 +24,7 @@ await GitHubApi.Login();
 
 var prs = new List<Issue>(500);
 prs.AddRange(await GitHubSearch.PRsMerged(repoOwner, repoName, createdAfter, createdBefore));
-var list = await TrelloLists.Create("Imported PRs (Space Station 14)", args[0]);
+var list = await TrelloLists.Create($"Imported PRs ({repoName})", args[0]);
 
 var cards = new List<Func<ValueTask>>();
 foreach (var pr in prs)

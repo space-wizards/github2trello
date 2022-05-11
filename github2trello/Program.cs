@@ -3,6 +3,11 @@ using github2trello.GitHub;
 using github2trello.Trello.API;
 using Octokit;
 
+EnvExtensions.GetOrThrow("GITHUB_CLIENT_ID");
+EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
+EnvExtensions.GetOrThrow("TRELLO_API_KEY");
+EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
+
 Console.WriteLine("Input a repo owner. Example: space-wizards");
 var repoOwner = Console.ReadLine() ?? throw new NullReferenceException();
 

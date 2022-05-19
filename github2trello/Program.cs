@@ -15,15 +15,19 @@ Console.WriteLine("Input a repo name. Example: space-station-14");
 var repoName = Console.ReadLine() ?? throw new NullReferenceException();
 
 Console.WriteLine("Input a starting date (YYYY-MM-DD). Example: 2022-04-01");
-var createdAfter = DateExtensions.FixMonthDays(Console.ReadLine());
+var after = DateExtensions.FixMonthDays(Console.ReadLine());
 
 Console.WriteLine("Input an ending date (YYYY-MM-DD). Example: 2022-04-30");
-var createdBefore = DateExtensions.FixMonthDays(Console.ReadLine());
+var before = DateExtensions.FixMonthDays(Console.ReadLine());
 
 await GitHubApi.Login();
 
+var contributors = await GitHubApi.Contributors(repoOwner, repoName, after, before);
+var contributorNames = string.Join(',', contributors.Select(author => author.Login));
+Console.WriteLine($"Contributors: {contributorNames}");
+
 var prs = new List<Issue>(500);
-prs.AddRange(await GitHubSearch.PRsMerged(repoOwner, repoName, createdAfter, createdBefore));
+prs.AddRange(await GitHubApi.PRsMerged(repoOwner, repoName, after, before));
 var list = await TrelloLists.Create($"Imported PRs ({repoName})", args[0]);
 
 var cards = new List<Func<ValueTask>>();

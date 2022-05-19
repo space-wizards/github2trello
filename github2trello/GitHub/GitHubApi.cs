@@ -79,7 +79,7 @@ public static class GitHubApi
         }
 
         var contributorList = contributors.Values.ToList();
-        contributorList.Sort((a, b) => string.Compare(a.Login, b.Login, StringComparison.Ordinal));
+        contributorList.Sort((a, b) => string.Compare(a.Login, b.Login, StringComparison.OrdinalIgnoreCase));
         
         return contributorList;
     }

@@ -27,7 +27,7 @@ var before = DateExtensions.FixMonthDays(Console.ReadLine());
 await GitHubApi.Login();
 
 var contributors = await GitHubApi.Contributors(repoOwner, repoNames, after, before);
-var contributorNames = string.Join(',', contributors.Select(author => author.Login));
+var contributorNames = string.Join(", ", contributors.Select(author => author.Login));
 Console.WriteLine($"Contributors: {contributorNames}");
 
 var prs = await GitHubApi.PRsMerged(repoOwner, repos, after, before);

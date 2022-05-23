@@ -1,18 +1,22 @@
 ﻿using github2trello;
 using github2trello.GitHub;
 using github2trello.Trello.API;
-using Octokit;
 
+// https://github.com/settings/applications > Authorized OAuth Apps
 EnvExtensions.GetOrThrow("GITHUB_CLIENT_ID");
 EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
+
+// https://trello.com/app-key
 EnvExtensions.GetOrThrow("TRELLO_API_KEY");
 EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
 
-Console.WriteLine("Input a repo owner. Example: space-wizards");
-var repoOwner = Console.ReadLine() ?? throw new NullReferenceException();
-
-Console.WriteLine("Input a repo name. Example: space-station-14");
-var repoName = Console.ReadLine() ?? throw new NullReferenceException();
+const string repoOwner = "space-wizards";
+var repos = new List<(string repoName, bool requireChangelog)>
+{
+    ("space-station-14", true),
+    ("RobustToolbox", false)
+};
+var repoNames = repos.Select(repo => repo.repoName).ToList();
 
 Console.WriteLine("Input a starting date (YYYY-MM-DD). Example: 2022-04-01");
 var after = DateExtensions.FixMonthDays(Console.ReadLine());
@@ -22,24 +26,34 @@ var before = DateExtensions.FixMonthDays(Console.ReadLine());
 
 await GitHubApi.Login();
 
-var contributors = await GitHubApi.Contributors(repoOwner, repoName, after, before);
+var contributors = await GitHubApi.Contributors(repoOwner, repoNames, after, before);
 var contributorNames = string.Join(',', contributors.Select(author => author.Login));
 Console.WriteLine($"Contributors: {contributorNames}");
 
-var prs = new List<Issue>(500);
-prs.AddRange(await GitHubApi.PRsMerged(repoOwner, repoName, after, before));
-var list = await TrelloLists.Create($"Imported PRs ({repoName})", args[0]);
+var prs = await GitHubApi.PRsMerged(repoOwner, repos, after, before);
+
+string GetListName(string repoName)
+{
+    return $"Imported PRs ({repoName})";
+}
+
+var lists = await TrelloLists.Create(repoNames.Select(GetListName).ToList(), args[0]);
 
 var cards = new List<Func<ValueTask>>();
-foreach (var pr in prs)
+foreach (var (repoName, repoPrs) in prs)
 {
-    var name = $"{pr.Title} (#{pr.Number})";
-    var desc = $"{pr.HtmlUrl}\n\n*Contributed by {pr.User.Login}*";
-    
-    cards.Add(async () =>
+    var list = lists[GetListName(repoName)];
+
+    foreach (var pr in repoPrs)
     {
-        await TrelloCards.Create(list.Id, name, desc);
-    });
+        var name = $"{pr.Title} (#{pr.Number})";
+        var desc = $"{pr.HtmlUrl}\n\n*Contributed by {pr.User.Login}*";
+    
+        cards.Add(async () =>
+        {
+            await TrelloCards.Create(list.Id, name, desc);
+        });
+    }
 }
 
 Console.WriteLine($"Creating {cards.Count} cards");

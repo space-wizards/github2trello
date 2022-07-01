@@ -22,7 +22,7 @@ Console.WriteLine("Input a starting date (YYYY-MM-DD). Example: 2022-04-01");
 var after = DateExtensions.FixMonthDays(Console.ReadLine());
 
 Console.WriteLine("Input an ending date (YYYY-MM-DD). Example: 2022-04-30");
-var before = DateExtensions.FixMonthDays(Console.ReadLine());
+var before = DateExtensions.FixMonthDays(Console.ReadLine()).AddDays(1).AddMilliseconds(-1);
 
 await GitHubApi.Login();
 

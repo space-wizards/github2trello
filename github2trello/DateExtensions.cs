@@ -7,7 +7,7 @@ public static class DateExtensions
     /// </summary>
     /// <param name="date">Date to fix if invalid</param>
     /// <returns>The original date with the correct number of days if invalid for that month.</returns>
-    public static DateTimeOffset FixMonthDays(string? date)
+    public static DateTime FixMonthDays(string? date)
     {
         if (date == null)
         {
@@ -39,6 +39,6 @@ public static class DateExtensions
         var daysInMonth = DateTime.DaysInMonth(year, month);
         date = daysInMonth < day ? $"{year}-{month}-{daysInMonth}" : date;
         
-        return DateTimeOffset.Parse(date);
+        return DateTime.SpecifyKind(DateTime.Parse(date), DateTimeKind.Utc);
     }
 }

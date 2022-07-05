@@ -47,7 +47,7 @@ public class PrintMinorChanges
             Console.WriteLine($"Found {cardsWithoutFilteredLines.Count} cards with no lines starting with {startingWith}:\n{string.Join('\n', cardsWithoutFilteredLines)}");
         }
 
-        Console.WriteLine($"Found {filteredLines.Count} lines starting with {startingWith}");
+        Console.WriteLine($"Found {filteredLines.Count} lines starting with {startingWith}:\n");
         
         foreach (var line in filteredLines)
         {

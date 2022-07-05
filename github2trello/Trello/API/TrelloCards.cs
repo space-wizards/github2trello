@@ -7,6 +7,8 @@ namespace github2trello.Trello.API;
 public static class TrelloCards
 {
     private const string ApiUrl = $"{TrelloApi.ApiUrl}cards";
+
+    public record CardResponse(string Id, string Desc);
     
     public static async Task Create(string idList, string name, string desc)
     {

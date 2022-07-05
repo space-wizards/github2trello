@@ -10,6 +10,8 @@ EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
 EnvExtensions.GetOrThrow("TRELLO_API_KEY");
 EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
 
+var trelloBoard = EnvExtensions.GetOrThrow("TRELLO_BOARD");
+
 const string repoOwner = "space-wizards";
 var repos = new List<(string repoName, bool requireChangelog)>
 {
@@ -37,7 +39,7 @@ string GetListName(string repoName)
     return $"Imported PRs ({repoName})";
 }
 
-var lists = await TrelloLists.Create(repoNames.Select(GetListName).ToList(), args[0]);
+var lists = await TrelloLists.Create(repoNames.Select(GetListName).ToList(), trelloBoard);
 
 var cards = new List<Func<ValueTask>>();
 foreach (var (repoName, repoPrs) in prs)

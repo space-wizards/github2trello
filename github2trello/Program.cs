@@ -10,7 +10,11 @@ EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
 EnvExtensions.GetOrThrow("TRELLO_API_KEY");
 EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
 
-var trelloBoard = EnvExtensions.GetOrThrow("TRELLO_BOARD");
+Console.WriteLine("Paste the link to the Trello board:");
+var trelloBoardUrl = Console.ReadLine() ?? throw new NullReferenceException();
+
+Console.WriteLine($"Getting board id for url {trelloBoardUrl}");
+var trelloBoard = (await TrelloBoards.UrlToBoardId(trelloBoardUrl)).Id;
 
 const string repoOwner = "space-wizards";
 var repos = new List<(string repoName, bool requireChangelog)>

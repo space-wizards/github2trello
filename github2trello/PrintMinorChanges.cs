@@ -12,12 +12,16 @@ public class PrintMinorChanges
 
     private static async Task RunAsync()
     {
-        var boardId = EnvExtensions.GetOrThrow("TRELLO_BOARD");
+        Console.WriteLine("Paste the link to the Trello board:");
+        var boardUrl = Console.ReadLine() ?? throw new NullReferenceException();
+
+        Console.WriteLine($"Getting board id for url {boardUrl}");
+        var boardId = (await TrelloBoards.UrlToBoardId(boardUrl)).Id;
+
         Console.WriteLine($"Searching lists in board with id {boardId}");
-        
         var lists = await TrelloBoards.GetLists(boardId);
         Console.WriteLine($"Found {lists.Length} lists");
-        
+
         var minorChanges = lists.First(board => board.Name.Equals("minor changes", InvariantCultureIgnoreCase));
         var cards = await TrelloLists.GetCards(minorChanges.Id);
         Console.WriteLine($"Found {cards.Length} minor changes cards");
@@ -48,7 +52,7 @@ public class PrintMinorChanges
         }
 
         Console.WriteLine($"Found {filteredLines.Count} lines starting with {startingWith}:\n");
-        
+
         foreach (var line in filteredLines)
         {
             Console.WriteLine(line);

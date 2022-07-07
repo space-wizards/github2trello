@@ -8,6 +8,7 @@ public static class TrelloCards
 {
     private const string ApiUrl = $"{TrelloApi.ApiUrl}cards";
 
+    // ReSharper disable once ClassNeverInstantiated.Global
     public record CardResponse(string Id, string Desc, string Name);
     
     public static async Task Create(string idList, string name, string desc)

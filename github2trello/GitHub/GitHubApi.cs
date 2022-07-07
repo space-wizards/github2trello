@@ -17,9 +17,9 @@ public static class GitHubApi
 
         var url = Client.Oauth.GetGitHubLoginUrl(loginRequest);
         Console.WriteLine($"Open {url} to authorize the application");
-        
-        var listener = new HttpListener();
-        
+
+        using var listener = new HttpListener();
+
         listener.Prefixes.Add("http://localhost:58292/");
         listener.Start();
 

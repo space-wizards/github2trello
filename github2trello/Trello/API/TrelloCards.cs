@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 using System.Web;
 using static github2trello.Trello.API.TrelloApi;
 
@@ -11,7 +12,7 @@ public static class TrelloCards
     // ReSharper disable once ClassNeverInstantiated.Global
     public record CardResponse(string Id, string Desc, string Name);
     
-    public static async Task Create(string idList, string name, string desc)
+    public static async Task<CardResponse> Create(string idList, string name, string desc)
     {
         idList = HttpUtility.UrlEncode(idList);
         name = HttpUtility.UrlEncode(name);
@@ -20,8 +21,11 @@ public static class TrelloCards
         var res = await Client.PostAsync($"{ApiUrl}?idList={idList}&name={name}&desc={desc}&key={Key}&token={Token}", null);
         if (!res.IsSuccessStatusCode)
         {
-            await Console.Error.WriteLineAsync($"Error creating card with name {HttpUtility.UrlDecode(name)} and description {HttpUtility.UrlDecode(desc)}:" +
-                                               $"{res.StatusCode} {res.ReasonPhrase}");
+            await Console.Error.WriteLineAsync(
+                $"Error creating card with name {HttpUtility.UrlDecode(name)} and description {HttpUtility.UrlDecode(desc)}:" +
+                $"{res.StatusCode} {res.ReasonPhrase}");
         }
+
+        return await JsonSerializer.DeserializeAsync<CardResponse>(await res.Content.ReadAsStreamAsync(), Options) ?? throw new NullReferenceException();
     }
 }

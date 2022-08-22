@@ -1,14 +1,18 @@
 ﻿using github2trello;
 using github2trello.GitHub;
 using github2trello.Trello.API;
+using Manatee.Trello;
 
 // https://github.com/settings/applications > Authorized OAuth Apps
 EnvExtensions.GetOrThrow("GITHUB_CLIENT_ID");
 EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
 
 // https://trello.com/app-key
-EnvExtensions.GetOrThrow("TRELLO_API_KEY");
-EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
+var trelloApiKey = EnvExtensions.GetOrThrow("TRELLO_API_KEY");
+var trelloApiToken = EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
+
+TrelloAuthorization.Default.AppKey = Environment.GetEnvironmentVariable(trelloApiKey);
+TrelloAuthorization.Default.UserToken = Environment.GetEnvironmentVariable(trelloApiToken);
 
 Console.WriteLine("Paste the link to the Trello board:");
 var trelloBoardUrl = Console.ReadLine() ?? throw new NullReferenceException();
@@ -57,7 +61,12 @@ foreach (var (repoName, repoPrs) in prs)
     
         cards.Add(async () =>
         {
-            await TrelloCards.Create(list.Id, name, desc);
+            var card = await TrelloCards.Create(list.Id, name, desc);
+
+            if (pr.Body is not { } prBody)
+                return;
+
+            await new Card(card.Id).Comments.Add($"#PR DESCRIPTION:\n\n{prBody}");
         });
     }
 }

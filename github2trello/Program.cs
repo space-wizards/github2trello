@@ -11,8 +11,8 @@ EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
 var trelloApiKey = EnvExtensions.GetOrThrow("TRELLO_API_KEY");
 var trelloApiToken = EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
 
-TrelloAuthorization.Default.AppKey = Environment.GetEnvironmentVariable(trelloApiKey);
-TrelloAuthorization.Default.UserToken = Environment.GetEnvironmentVariable(trelloApiToken);
+TrelloAuthorization.Default.AppKey = trelloApiKey;
+TrelloAuthorization.Default.UserToken = trelloApiToken;
 
 Console.WriteLine("Paste the link to the Trello board:");
 var trelloBoardUrl = Console.ReadLine() ?? throw new NullReferenceException();
@@ -58,15 +58,35 @@ foreach (var (repoName, repoPrs) in prs)
     {
         var name = $"{pr.Title} (#{pr.Number})";
         var desc = $"{pr.HtmlUrl}\n\n*Contributed by {pr.User.Login}*";
-    
+
+
         cards.Add(async () =>
         {
-            var card = await TrelloCards.Create(list.Id, name, desc);
+            var retries = 0;
+            while (true)
+            {
+                try
+                {
+                    var card = await TrelloCards.Create(list.Id, name, desc);
 
-            if (pr.Body is not { } prBody)
-                return;
+                    if (pr.Body is not { } prBody)
+                        return;
 
-            await new Card(card.Id).Comments.Add($"#PR DESCRIPTION:\n\n{prBody}");
+                    await Task.Delay(10000);
+
+                    await new Card(card.Id).Comments.Add($"#PR DESCRIPTION:\n\n{prBody}");
+                    break;
+                }
+                catch
+                {
+                    retries++;
+
+                    if (retries >= 10)
+                        throw;
+
+                    await Task.Delay(10000);
+                }
+            }
         });
     }
 }

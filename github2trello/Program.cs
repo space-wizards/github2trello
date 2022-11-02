@@ -1,4 +1,6 @@
-﻿using github2trello;
+﻿using System.Collections.Concurrent;
+using System.Text;
+using github2trello;
 using github2trello.GitHub;
 using github2trello.Trello.API;
 using Manatee.Trello;
@@ -50,6 +52,8 @@ string GetListName(string repoName)
 var lists = await TrelloLists.Create(repoNames.Select(GetListName).ToList(), trelloBoard);
 
 var cards = new List<Func<ValueTask>>();
+var erroredCards = new ConcurrentBag<(string Name, string Desc)>();
+
 foreach (var (repoName, repoPrs) in prs)
 {
     var list = lists[GetListName(repoName)];
@@ -58,7 +62,6 @@ foreach (var (repoName, repoPrs) in prs)
     {
         var name = $"{pr.Title} (#{pr.Number})";
         var desc = $"{pr.HtmlUrl}\n\n*Contributed by {pr.User.Login}*";
-
 
         cards.Add(async () =>
         {
@@ -72,17 +75,23 @@ foreach (var (repoName, repoPrs) in prs)
                     if (pr.Body is not { } prBody)
                         return;
 
-                    await Task.Delay(10000);
+                    await Task.Delay(1000);
 
-                    await new Card(card.Id).Comments.Add($"#PR DESCRIPTION:\n\n{prBody}");
-                    break;
+                    var trelloCard = new Card(card.Id);
+                    await trelloCard.Comments.Refresh();
+                    await trelloCard.Comments.Add($"#PR DESCRIPTION:\n\n{prBody}");
+
+                    return;
                 }
                 catch
                 {
                     retries++;
 
                     if (retries >= 10)
+                    {
+                        erroredCards.Add((name, desc));
                         throw;
+                    }
 
                     await Task.Delay(10000);
                 }
@@ -93,3 +102,21 @@ foreach (var (repoName, repoPrs) in prs)
 
 Console.WriteLine($"Creating {cards.Count} cards");
 await Parallel.ForEachAsync(cards, new ParallelOptions { MaxDegreeOfParallelism = 8 }, (func, _) => func());
+
+if (erroredCards.IsEmpty)
+{
+    Console.WriteLine("Created all cards");
+    return;
+}
+
+var errors = new StringBuilder();
+foreach (var card in erroredCards)
+{
+    errors
+        .AppendLine($"{card.Name}")
+        .AppendLine($"{card.Desc}")
+        .AppendLine()
+        .AppendLine();
+}
+
+Console.WriteLine($"Failed to create {erroredCards.Count} cards:\n{errors}");

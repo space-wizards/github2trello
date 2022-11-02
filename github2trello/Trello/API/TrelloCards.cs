@@ -19,12 +19,7 @@ public static class TrelloCards
         desc = HttpUtility.UrlEncode(desc);
 
         var res = await Client.PostAsync($"{ApiUrl}?idList={idList}&name={name}&desc={desc}&key={Key}&token={Token}", null);
-        if (!res.IsSuccessStatusCode)
-        {
-            await Console.Error.WriteLineAsync(
-                $"Error creating card with name {HttpUtility.UrlDecode(name)} and description {HttpUtility.UrlDecode(desc)}:" +
-                $"{res.StatusCode} {res.ReasonPhrase}");
-        }
+        res.EnsureSuccessStatusCode();
 
         return await JsonSerializer.DeserializeAsync<CardResponse>(await res.Content.ReadAsStreamAsync(), Options) ?? throw new NullReferenceException();
     }

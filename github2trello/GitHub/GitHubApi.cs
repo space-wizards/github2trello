@@ -65,7 +65,7 @@ public static class GitHubApi
                 if (requireChangelog)
                 {
                     items = search.Items.Where(item => HasChangelog(item.Body)).ToList();
-                    Console.WriteLine($"Skipping {itemsFound - items.Count} PRs without a changelog");
+                    Console.WriteLine($"Skipping {itemsFound - items.Count}/{itemsFound} PRs without a changelog");
                 }
             
                 pullRequests[repoName].AddRange(items);

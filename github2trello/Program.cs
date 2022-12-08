@@ -53,6 +53,7 @@ var lists = await TrelloLists.Create(repoNames.Select(GetListName).ToList(), tre
 
 var cards = new List<Func<ValueTask>>();
 var erroredCards = new ConcurrentBag<(string Name, string Desc)>();
+var erroredComments = new ConcurrentBag<(string Name, string Desc)>();
 
 foreach (var (repoName, repoPrs) in prs)
 {
@@ -66,22 +67,15 @@ foreach (var (repoName, repoPrs) in prs)
         cards.Add(async () =>
         {
             var retries = 0;
+            TrelloCards.CardResponse card;
+
             while (true)
             {
                 try
                 {
-                    var card = await TrelloCards.Create(list.Id, name, desc);
-
-                    if (pr.Body is not { } prBody)
-                        return;
-
+                    card = await TrelloCards.Create(list.Id, name, desc);
                     await Task.Delay(1000);
-
-                    var trelloCard = new Card(card.Id);
-                    await trelloCard.Comments.Refresh();
-                    await trelloCard.Comments.Add($"#PR DESCRIPTION:\n\n{prBody}");
-
-                    return;
+                    break;
                 }
                 catch
                 {
@@ -90,6 +84,35 @@ foreach (var (repoName, repoPrs) in prs)
                     if (retries >= 10)
                     {
                         erroredCards.Add((name, desc));
+                        throw;
+                    }
+
+                    await Task.Delay(10000);
+                }
+            }
+
+            if (pr.Body is not { } prBody)
+                return;
+
+            var commentDesc = $"#PR DESCRIPTION:\n\n{prBody}";
+
+            retries = 0;
+            while (true)
+            {
+                try
+                {
+                    var trelloCard = new Card(card.Id);
+                    await trelloCard.Comments.Refresh();
+                    await trelloCard.Comments.Add(commentDesc);
+                    break;
+                }
+                catch
+                {
+                    retries++;
+
+                    if (retries >= 10)
+                    {
+                        erroredComments.Add((name, commentDesc));
                         throw;
                     }
 

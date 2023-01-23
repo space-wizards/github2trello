@@ -1,4 +1,7 @@
-﻿using github2trello.Trello.API;
+﻿using System.Text.RegularExpressions;
+using github2trello.GitHub;
+using github2trello.Trello.API;
+using Manatee.Trello;
 using static System.StringComparison;
 
 namespace github2trello;
@@ -12,6 +15,13 @@ public class PrintMinorChanges
 
     private static async Task RunAsync()
     {
+        // https://trello.com/app-key
+        var trelloApiKey = EnvExtensions.GetOrThrow("TRELLO_API_KEY");
+        var trelloApiToken = EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
+
+        TrelloAuthorization.Default.AppKey = trelloApiKey;
+        TrelloAuthorization.Default.UserToken = trelloApiToken;
+
         Console.WriteLine("Paste the link to the Trello board:");
         var boardUrl = Console.ReadLine() ?? throw new NullReferenceException();
 
@@ -27,34 +37,24 @@ public class PrintMinorChanges
         Console.WriteLine($"Found {cards.Length} minor changes cards");
 
         var lines = new List<string>();
-        var filteredLines = new List<string>();
-        var cardsWithoutFilteredLines = new List<string>();
-        const char startingWith = '-';
         foreach (var card in cards)
         {
-            var cardLines = card.Desc.Split('\n');
-            lines.AddRange(cardLines);
+            var trelloCard = new Card(card.Id);
+            await trelloCard.Comments.Refresh();
+            if (trelloCard.Comments.FirstOrDefault() is not { } comment)
+                continue;
 
-            var cardFilteredLines = cardLines.Where(line => line.StartsWith(startingWith)).ToList();
-            filteredLines.AddRange(cardFilteredLines);
-
-            if (cardFilteredLines.Count == 0)
+            foreach (var changelog in GitHubApi.GetChangelog(comment.Data.Text))
             {
-                cardsWithoutFilteredLines.Add(card.Name);
+                lines.Add($"{changelog} {card.Desc.Split("\n")[2]}");
             }
         }
 
         Console.WriteLine($"Found {lines.Count} lines");
 
-        if (cardsWithoutFilteredLines.Count > 0)
+        foreach (var line in lines)
         {
-            Console.WriteLine($"Found {cardsWithoutFilteredLines.Count} cards with no lines starting with {startingWith}:\n\n{string.Join('\n', cardsWithoutFilteredLines)}");
-        }
-
-        Console.WriteLine($"Found {filteredLines.Count} lines starting with {startingWith}:\n");
-
-        foreach (var line in filteredLines)
-        {
+            // TODO fix the console scrunklying itself here
             Console.WriteLine(line);
         }
     }

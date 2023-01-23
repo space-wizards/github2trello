@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Text.RegularExpressions;
 using Octokit;
 
@@ -10,6 +11,7 @@ public static class GitHubApi
     private static readonly string ClientId = EnvExtensions.GetOrThrow("GITHUB_CLIENT_ID");
     private static readonly string ClientSecret = EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
     private static readonly Regex CommentsRegex = new("<!--.*?-->", RegexOptions.Compiled | RegexOptions.Singleline);
+    private static readonly Regex ChangelogRegex = new("(-\\s*(add|remove|tweak|fix):\\s*(.*)\n)+", RegexOptions.Compiled);
 
     public static async Task Login()
     {
@@ -31,7 +33,7 @@ public static class GitHubApi
 
         Client.Credentials = new Credentials(token.AccessToken);
     }
-    
+
     public static async Task<Dictionary<string, List<Issue>>> PRsMerged(
         string repoOwner,
         List<(string repoName, bool requireChangelog)> repoNames,
@@ -67,11 +69,11 @@ public static class GitHubApi
                     items = search.Items.Where(item => HasChangelog(item.Body)).ToList();
                     Console.WriteLine($"Skipping {itemsFound - items.Count}/{itemsFound} PRs without a changelog");
                 }
-            
+
                 pullRequests[repoName].AddRange(items);
             }
         }
-        
+
         Console.WriteLine($"Found {pullRequests.Values.Sum(prs => prs.Count)} PRs");
         return pullRequests;
     }
@@ -108,5 +110,29 @@ public static class GitHubApi
     private static bool HasChangelog(string? body)
     {
         return body != null && CommentsRegex.Replace(body, string.Empty).Contains(":cl:");
+    }
+
+    public static IEnumerable<string> GetChangelog(string body)
+    {
+        var clIndex = body.LastIndexOf(":cl:", StringComparison.InvariantCulture);
+        if (clIndex == -1)
+            yield break;
+
+        body = body[clIndex..];
+        foreach (Match match in ChangelogRegex.Matches(body))
+        {
+            var changeGroup = match.Groups[3];
+            if (!changeGroup.Success)
+                continue;
+
+            var change = changeGroup.Value;
+            if (change == string.Empty)
+                continue;
+
+            if (!change.Trim().EndsWith("."))
+                change = $"{change}.";
+
+            yield return change.Trim();
+        }
     }
 }

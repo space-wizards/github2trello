@@ -15,12 +15,7 @@ public class PrintMinorChanges
 
     private static async Task RunAsync()
     {
-        // https://trello.com/app-key
-        var trelloApiKey = EnvExtensions.GetOrThrow("TRELLO_API_KEY");
-        var trelloApiToken = EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
-
-        TrelloAuthorization.Default.AppKey = trelloApiKey;
-        TrelloAuthorization.Default.UserToken = trelloApiToken;
+        TrelloApi.Authorize();
 
         Console.WriteLine("Paste the link to the Trello board:");
         var boardUrl = Console.ReadLine() ?? throw new NullReferenceException();

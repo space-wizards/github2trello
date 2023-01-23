@@ -9,12 +9,7 @@ using Manatee.Trello;
 EnvExtensions.GetOrThrow("GITHUB_CLIENT_ID");
 EnvExtensions.GetOrThrow("GITHUB_CLIENT_SECRET");
 
-// https://trello.com/app-key
-var trelloApiKey = EnvExtensions.GetOrThrow("TRELLO_API_KEY");
-var trelloApiToken = EnvExtensions.GetOrThrow("TRELLO_API_TOKEN");
-
-TrelloAuthorization.Default.AppKey = trelloApiKey;
-TrelloAuthorization.Default.UserToken = trelloApiToken;
+TrelloApi.Authorize();
 
 Console.WriteLine("Paste the link to the Trello board:");
 var trelloBoardUrl = Console.ReadLine() ?? throw new NullReferenceException();
